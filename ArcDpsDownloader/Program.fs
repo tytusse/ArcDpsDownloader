@@ -5,11 +5,31 @@ open System.IO
 open System.Collections.Concurrent
 open FSharpx.Control
 
+let startedAt = DateTime.Now
+let gameDirPath = @"D:\Games\Guild Wars 2\"
+let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
+let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum"
+let binLocalPath = gameDirPath + @"bin64\d3d9.dll"
+let lastModifiedLocalPath = gameDirPath + @"bin64\d3d9.dll.lastModified"
+let logPath = gameDirPath + @"bin64\d3d9.dll.log"
+
 let messageLoop = new BlockingCollection<unit->unit>()
 
 let printfn msg = 
     let pr (str:string) = messageLoop.Add(fun () -> 
-        System.Console.WriteLine (DateTime.Now.ToString("HH:mm:ss.fff") + ": " + str))
+        let now = DateTime.Now
+        let sinceStart = now - startedAt
+        let msg = 
+            sprintf "%s[%fms] %s"
+                (now.ToString("HH:mm:ss.fff"))
+                sinceStart.TotalMilliseconds
+                str
+        Printf.printfn "%s" msg
+        try 
+            File.AppendAllText(logPath, msg+"\n")
+        with x ->
+            Printf.printfn "failed adding to log fue to: %O" x
+        )
     Printf.kprintf pr msg
 
 let http = new HttpClient()
@@ -40,11 +60,7 @@ let downloadBytes url =
 
 let inline split (delim:string) (str:string) = str.Split(delim)
 let runUnsafe() =
-    
-    let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
-    let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum"
-    let binLocalPath = @"D:\Games\Guild Wars 2\bin64\d3d9.dll"
-    let lastModifiedLocalPath = @"D:\Games\Guild Wars 2\bin64\d3d9.dll.lastModified"
+    printfn "started at: %s" (startedAt.ToString("yyyy-MM-dd HH:mm:ss.fff"))
     
     async {
         let! lastModDisk = async {
@@ -97,14 +113,13 @@ let runUnsafe() =
 
         printfn "done"
     } 
-    |> Async.RunSynchronously
 
 [<EntryPoint>]
 let main _ =
     async{
         try
             try 
-                runUnsafe()
+                do! runUnsafe()
                 do! Async.Sleep 3000
             with x ->
                 printfn "program failed with:\n%APress any key to close" x
