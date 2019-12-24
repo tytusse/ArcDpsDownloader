@@ -8,17 +8,25 @@ open FSharpx.Control
 let messageLoop = new BlockingCollection<unit->unit>()
 
 let printfn msg = 
-    let pr (str:string) = messageLoop.Add(fun () -> System.Console.WriteLine str)
+    let pr (str:string) = messageLoop.Add(fun () -> 
+        System.Console.WriteLine (DateTime.Now.ToString("HH:mm:ss.fff") + ": " + str))
     Printf.kprintf pr msg
 
 let http = new HttpClient()
+let headers url = async {
+    printfn "HEAD %s" url
+    use msg = new HttpRequestMessage(HttpMethod.Head, url)
+    let! h = http.SendAsync msg |> Async.AwaitTask
+    return h
+}
+    
 let download url = async {
-    printfn "will download %s" url
+    printfn "GET %s" url
     let! r = http.GetAsync(url) |> Async.AwaitTask
     if r.StatusCode <> HttpStatusCode.OK
     then failwithf "failed downloading %s with [%O] %s" url r.StatusCode r.ReasonPhrase
 
-    printfn "%s downloaded successfully" url 
+    printfn "done: GET %s" url 
     return r
 }
 
@@ -32,7 +40,7 @@ let downloadBytes url =
 
 let inline split (delim:string) (str:string) = str.Split(delim)
 let runUnsafe() =
-
+    
     let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
     let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum"
     let binLocalPath = @"D:\Games\Guild Wars 2\bin64\d3d9.dll"
