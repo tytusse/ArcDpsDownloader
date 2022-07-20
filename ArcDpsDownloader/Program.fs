@@ -7,17 +7,17 @@ open FSharpx.Control
 
 let startedAt = DateTime.Now
 let gameDirPath = @"D:\Games\Guild Wars 2\"
-let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
-let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum"
+let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d11.dll"
+let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d11.dll.md5sum"
 let binLocalPaths =
     [
         @"bin64\d3d9.dll"
-        @"bin64\d3d11.dll"
+        @"d3d11.dll"
     ]
     |> List.map (fun x -> gameDirPath + x)
     
-let lastModifiedLocalPath = gameDirPath + @"bin64\d3d9.dll.lastModified"
-let logPath = gameDirPath + @"bin64\d3d9.dll.log"
+let lastModifiedLocalPath = gameDirPath + @"arcdps.lastModified"
+let logPath = gameDirPath + @"arcdps.download.log"
 
 let messageLoop = new BlockingCollection<unit->unit>()
 
