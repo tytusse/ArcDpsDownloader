@@ -9,7 +9,13 @@ let startedAt = DateTime.Now
 let gameDirPath = @"D:\Games\Guild Wars 2\"
 let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
 let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum"
-let binLocalPath = gameDirPath + @"bin64\d3d9.dll"
+let binLocalPaths =
+    [
+        @"bin64\d3d9.dll"
+        @"bin64\d3d11.dll"
+    ]
+    |> List.map (fun x -> gameDirPath + x)
+    
 let lastModifiedLocalPath = gameDirPath + @"bin64\d3d9.dll.lastModified"
 let logPath = gameDirPath + @"bin64\d3d9.dll.log"
 
@@ -100,10 +106,11 @@ let runUnsafe() =
 
             if md5 <> actMd5 then failwith "actual md5 does not match expected one"
 
-            printfn "writing bin to %s" binLocalPath
+            printfn "writing bin to %A" binLocalPaths
             
             // sync write bin then md5
-            do! File.WriteAllBytesAsync(binLocalPath, bin) |> Async.AwaitTask
+            for binLocalPath in binLocalPaths do
+                do! File.WriteAllBytesAsync(binLocalPath, bin) |> Async.AwaitTask
             match lastModServer with
             | Some data ->
                 printfn "writing last mod date to %s" lastModifiedLocalPath
