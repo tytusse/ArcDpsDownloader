@@ -21,7 +21,7 @@ let logPath = gameDirPath + @"bin64\d3d9.dll.log"
 
 let messageLoop = new BlockingCollection<unit->unit>()
 
-let printfn msg = 
+let printToQueue msg = 
     let pr (str:string) = messageLoop.Add(fun () -> 
         let now = DateTime.Now
         let sinceStart = now - startedAt
@@ -30,29 +30,29 @@ let printfn msg =
                 (now.ToString("HH:mm:ss.fff"))
                 sinceStart.TotalMilliseconds
                 str
-        Printf.printfn "%s" msg
+        Printf.printfn $"%s{msg}"
         try 
             File.AppendAllText(logPath, msg+"\n")
         with x ->
-            Printf.printfn "failed adding to log fue to: %O" x
+            Printf.printfn $"failed adding to log fue to: {x}"
         )
     Printf.kprintf pr msg
 
 let http = new HttpClient()
 let headers url = async {
-    printfn "HEAD %s" url
+    printToQueue $"HEAD %s{url}"
     use msg = new HttpRequestMessage(HttpMethod.Head, url)
     let! h = http.SendAsync msg |> Async.AwaitTask
     return h
 }
     
 let download url = async {
-    printfn "GET %s" url
+    printToQueue $"GET %s{url}"
     let! r = http.GetAsync(url) |> Async.AwaitTask
     if r.StatusCode <> HttpStatusCode.OK
-    then failwithf "failed downloading %s with [%O] %s" url r.StatusCode r.ReasonPhrase
+    then failwithf $"failed downloading %s{url} with [{r.StatusCode}] %s{r.ReasonPhrase}"
 
-    printfn "done: GET %s" url 
+    printToQueue $"done: GET %s{url}" 
     return r
 }
 
@@ -66,7 +66,7 @@ let downloadBytes url =
 
 let inline split (delim:string) (str:string) = str.Split(delim)
 let runUnsafe() =
-    printfn "started at: %s" (startedAt.ToString("yyyy-MM-dd HH:mm:ss.fff"))
+    printToQueue "started at: %s" (startedAt.ToString("yyyy-MM-dd HH:mm:ss.fff"))
     
     async {
         let! lastModDisk = async {
@@ -84,11 +84,11 @@ let runUnsafe() =
         
         match lastModDisk, lastModServer with
         | Some lastModDisk, Some lastModServer when lastModDisk = lastModServer ->
-            printfn "Server modification date is the same as disk date (%s) - not downloading" lastModDisk
+            printToQueue $"Server modification date is the same as disk date (%s{lastModDisk}) - not downloading"
         | _ ->
-            printfn "modification dates: local = %A, server = %A" lastModDisk lastModServer
+            printToQueue $"modification dates: local = %A{lastModDisk}, server = %A{lastModServer}"
             let! md5 = md5Result.Content.ReadAsStringAsync() |> Async.AwaitTask
-            printfn "expected md5 is: %s" md5
+            printToQueue $"expected md5 is: %s{md5}"
 
             let md5 = 
                 match md5.Split(" ") |> List.ofArray with
@@ -102,23 +102,23 @@ let runUnsafe() =
                 |> Array.map (fun x -> x.ToString("X2"))
                 |> String.concat ""
 
-            printfn "actual md5 is: %s" actMd5
+            printToQueue $"actual md5 is: %s{actMd5}"
 
             if md5 <> actMd5 then failwith "actual md5 does not match expected one"
 
-            printfn "writing bin to %A" binLocalPaths
+            printToQueue $"writing bin to %A{binLocalPaths}"
             
             // sync write bin then md5
             for binLocalPath in binLocalPaths do
                 do! File.WriteAllBytesAsync(binLocalPath, bin) |> Async.AwaitTask
             match lastModServer with
             | Some data ->
-                printfn "writing last mod date to %s" lastModifiedLocalPath
+                printToQueue $"writing last mod date to %s{lastModifiedLocalPath}"
                 do! File.WriteAllTextAsync(lastModifiedLocalPath, data) |> Async.AwaitTask
             | None -> 
-                printfn "NOTE: server last modification date not known - not writing it locally"
+                printToQueue "NOTE: server last modification date not known - not writing it locally"
 
-        printfn "done"
+        printToQueue "done"
     } 
 
 [<EntryPoint>]
@@ -129,7 +129,7 @@ let main _ =
                 do! runUnsafe()
                 do! Async.Sleep 3000
             with x ->
-                printfn "program failed with:\n%APress any key to close" x
+                printToQueue $"program failed with:\n%A{x}Press any key to close"
                 messageLoop.Add (Console.ReadKey >> ignore)
         finally messageLoop.CompleteAdding()
     } |> Async.Start
