@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/lib/">
+    <Project Path="lib/ArcDpsDownloader.Lib.fsproj" />
+  </Folder>
+  <Folder Name="/registry-app/">
+    <Project Path="registry-app/ArcDpsDownloader.RegistryApp.fsproj" />
+  </Folder>
+  <Project Path="app/ArcDpsDownloader.fsproj" />
+</Solution>

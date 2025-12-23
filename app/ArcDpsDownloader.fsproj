@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
     <PackageReference Include="FSharpx.Async" Version="1.14.1" />
+    <ProjectReference Include="..\lib\ArcDpsDownloader.Lib.fsproj" />
   </ItemGroup>
 
 </Project>

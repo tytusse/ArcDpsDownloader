@@ -4,20 +4,22 @@ open System.Net
 open System.IO
 open System.Collections.Concurrent
 open FSharpx.Control
+open ArcDpsDownloader.Lib
 
 let startedAt = DateTime.Now
-let gameDirPath = @"D:\Games\Guild Wars 2\"
+let gameDirPath = Registry.gameDirPath()
 let binUrl  = @"https://www.deltaconnected.com/arcdps/x64/d3d11.dll"
 let md5Url = @"https://www.deltaconnected.com/arcdps/x64/d3d11.dll.md5sum"
+let private combine (pths:string seq) = Path.Combine (Seq.toArray pths)
 let binLocalPaths =
     [
         @"bin64\d3d9.dll"
         @"d3d11.dll"
     ]
-    |> List.map (fun x -> gameDirPath + x)
+    |> List.map (fun x -> combine [gameDirPath; x])
     
-let lastModifiedLocalPath = gameDirPath + @"arcdps.lastModified"
-let logPath = gameDirPath + @"arcdps.download.log"
+let lastModifiedLocalPath = combine [gameDirPath; "arcdps.lastModified"]
+let logPath = combine [gameDirPath; "arcdps.download.log"]
 
 let messageLoop = new BlockingCollection<unit->unit>()
 
